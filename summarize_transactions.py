@@ -29,7 +29,9 @@ def main(args):
         trans_by_type[trans_type] = aggregate_transactions_by_type(transaction_data, args.field, trans_type)
 
     for trans_type in trans_by_type:
-        trans_by_type[trans_type].to_csv(f"{trans_type}.tsv", sep="\t")
+        transactions = trans_by_type[trans_type]
+        transactions["Group"] = None
+        transactions.to_csv(f"{trans_type}.tsv", sep="\t")
         LOGGER.debug(f"{trans_type}\n{trans_by_type[trans_type]}")
 
 
