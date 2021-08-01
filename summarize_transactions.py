@@ -3,7 +3,6 @@
 import argparse
 import logging
 
-# TODO: Add a requirements.txt
 import pandas as pd
 
 global LOGGER
@@ -25,10 +24,12 @@ def parse_args():
 def main(args):
     transaction_data = read_files(args.paths)
     trans_by_type = {}
+    # TODO: Add * option for args.type
     for trans_type in args.type.split(","):
         trans_by_type[trans_type] = aggregate_transactions_by_type(transaction_data, args.field, trans_type)
 
     for trans_type in trans_by_type:
+        trans_by_type[trans_type].to_csv(f"{trans_type}.tsv", sep="\t")
         LOGGER.debug(f"{trans_type}\n{trans_by_type[trans_type]}")
 
 
@@ -50,18 +51,18 @@ def read_files(filelist):
 
 def aggregate_transactions_by_type(transdata, field_name, transtype):
     result = []
+    transdata.set_index(field_name)
     try:
         trans_by_type = transdata.loc[transdata["Transaction Type"] == transtype]
-        LOGGER.info(f"Loaded {transtype}s: {len(trans_by_type)}")
+        LOGGER.info(f"Loaded '{transtype}' transactions: {len(trans_by_type)}")
     except KeyError:
         LOGGER.error(f"Field not found in input: 'Transaction Type'")
         return None
 
-    trans_by_type.set_index(field_name)
     try:
-        trans_count_by_field = trans_by_type.groupby(field_name)[field_name].agg("count")
-        LOGGER.info(f"Loaded unique {transtype}s by {field_name}: {len(trans_count_by_field)}")
-        LOGGER.debug(f"{transtype}s by {field_name} summary:\n{trans_count_by_field}")
+        trans_count_by_field = trans_by_type.groupby(field_name).agg(num_transactions=(field_name, "count"))
+        LOGGER.info(f"Aggregated unique '{transtype}' transactions by '{field_name}': {len(trans_count_by_field)}")
+        LOGGER.debug(f"'{transtype}' transactions by '{field_name}' summary:\n{trans_count_by_field}")
         result.append(trans_count_by_field)
     except KeyError as exc:
         LOGGER.error(f"Field not found in input: {exc}")
@@ -70,33 +71,33 @@ def aggregate_transactions_by_type(transdata, field_name, transtype):
     try:
         trans_amount_sum = trans_by_type.groupby(field_name)["Amount"].agg(sum)
         LOGGER.debug(f"{transtype} Amount Sum by {field_name} summary:\n{trans_amount_sum}")
-        result.append(trans_amount_sum)
+        result.append(trans_amount_sum.to_frame().rename(columns={"Amount": "Amount (sum)"}))
     except KeyError as exc:
         LOGGER.warning(f"Field not found in input: {exc}")
 
     try:
         trans_amount_mean = trans_by_type.groupby(field_name)["Amount"].agg("mean")
         LOGGER.debug(f"{transtype} Amount Mean by {field_name} summary:\n{trans_amount_mean}")
-        result.append(trans_amount_mean)
+        result.append(trans_amount_mean.to_frame().rename(columns={"Amount": "Amount (mean)"}))
     except KeyError as exc:
         LOGGER.warning(f"Field not found in input: {exc}")
 
     try:
         trans_date_min = trans_by_type.groupby(field_name)["Effective Date"].agg(min)
         LOGGER.debug(f"{transtype} Earliest Date by {field_name} summary:\n{trans_date_min}")
-        result.append(trans_date_min)
+        result.append(trans_date_min.to_frame().rename(columns={"Effective Date": "Effective Date (min)"}))
     except KeyError as exc:
         LOGGER.warning(f"Field not found in input: {exc}")
 
     try:
         trans_date_max = trans_by_type.groupby(field_name)["Effective Date"].agg(max)
         LOGGER.debug(f"{transtype} Latest Date by {field_name} summary:\n{trans_date_max}")
-        result.append(trans_date_max)
+        result.append(trans_date_max.to_frame().rename(columns={"Effective Date": "Effective Date (max)"}))
     except KeyError as exc:
         LOGGER.warning(f"Field not found in input: {exc}")
 
-    retval = pd.DataFrame().set_index(field_name)
-    return retval.join(other=result, on=field_name)
+    retval = pd.DataFrame({field_name: []}).set_index(field_name)
+    return retval.join(other=result, how="outer")
 
 
 if __name__ == "__main__":
