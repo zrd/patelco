@@ -63,7 +63,6 @@ def aggregate_transactions_by_type(transdata, field_name, transtype):
         trans_count_by_field = trans_by_type.groupby(field_name).agg(num_transactions=(field_name, "count"))
         LOGGER.info(f"Aggregated unique '{transtype}' transactions by '{field_name}': {len(trans_count_by_field)}")
         LOGGER.debug(f"'{transtype}' transactions by '{field_name}' summary:\n{trans_count_by_field}")
-        result.append(trans_count_by_field)
     except KeyError as exc:
         LOGGER.error(f"Field not found in input: {exc}")
         return None
@@ -96,8 +95,7 @@ def aggregate_transactions_by_type(transdata, field_name, transtype):
     except KeyError as exc:
         LOGGER.warning(f"Field not found in input: {exc}")
 
-    retval = pd.DataFrame({field_name: []}).set_index(field_name)
-    return retval.join(other=result, how="outer")
+    return trans_count_by_field.join(other=result, how="outer")
 
 
 if __name__ == "__main__":
