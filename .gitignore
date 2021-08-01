@@ -129,8 +129,9 @@ dmypy.json
 .pyre/
 
 # *** ANY DATA ***
-# Given data for this project could easily contain sensitive financial information
-# Bar any obvious format and figure out a secure way to add data needed for testing, etc.
+# Given that data for this project could easily contain sensitive
+# financial information, bar any obvious data format and figure out a
+# secure way to add data needed for testing, etc.
 *.csv
 *.CSV
 *.tsv
@@ -145,7 +146,20 @@ dmypy.json
 *.7Z
 *.rar
 *.RAR
-# TODO: Verify extensions
+*.xls
+*.XLS
+*.xlsx
+*.XLSX
+*.ods
+*.ODS
+*.xml
+*.XML
+*.xslt
+*.XSLT
+*.json
+*.JSON
+
+# TODO: Verify the following extensions.
 # Open Financial Exchange format
 *.ofx
 *.OFX
